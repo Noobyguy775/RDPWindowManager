@@ -5,6 +5,8 @@ DetectHiddenWindows 1
 
 OnMessage(0x112, WM_SYSCOMMAND)
 
+TraySetIcon(A_ScriptDir . "\lib\icon.ico")
+
 configPath := A_ScriptDir . "/config.ini"
 
 mstscPath := A_WinDir . "\System32\mstsc.exe"
