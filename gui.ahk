@@ -1,16 +1,15 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 
+
 DetectHiddenWindows 1
 
-OnMessage(0x112, WM_SYSCOMMAND)
+OnMessage(0x112, (wParam, *) => wParam = 0xF020 ? destroyUi() : "") ; wParam = WM_SYSCOMMAND, 0xF020 = SC_MINIMIZE
+OnExit(Showall)
 
 TraySetIcon(A_ScriptDir . "\lib\icon.ico")
 
-configPath := A_ScriptDir . "/config.ini"
-
-mstscPath := A_WinDir . "\System32\mstsc.exe"
-className := "TscShellContainerClass"
+configPath := A_ScriptDir . "\config.ini"
 
 AutostartRegPath := "HKCU\Software\Microsoft\Windows\CurrentVersion\Run"
 AutoStartRegName := "RDPWindowManager"
@@ -18,17 +17,27 @@ AutoStartRegName := "RDPWindowManager"
 ExpectedCount := IniRead(configPath, "Main", "ExpectedCount", 1)
 Blacklist := IniRead(configPath, "Main", "Blacklist", "")
 Timeout := IniRead(configPath, "Main", "Timeout", 30)
+TutorialComplete := IniRead(configPath, "Main", "TutorialComplete", 0)
+
+if !TutorialComplete
+    Msgbox("Before you begin, it's important that each RDP has it's own unique title. I would suggest making the title the name of the roblox account, or something like 'Main', 'Tad Alt', etc."), IniWrite(1, configPath, "Main", "TutorialComplete")
+
+title := "RDPs"
 
 A_TrayMenu.Delete()
 A_TrayMenu.Add("Show/Hide UI", (*) => IsSet(Ui) ? destroyUi() : drawUi())
-A_TrayMenu.Add()
+A_TrayMenu.Add("Help", (*) => Help())
 A_TrayMenu.Add("Exit", (*) => ExitApp())
 A_TrayMenu.Add()
 A_TrayMenu.Add("Hide RDPs", (*) => Hideall())
 A_TrayMenu.Add("Show RDPs", (*) => Showall())
 A_TrayMenu.Add()
-A_TrayMenu.Add("Help", (*) => Help())
-A_TrayMenu.Add()
+A_TrayMenu.Add(title, (*) => A_TrayMenu.Show())
+A_TrayMenu.Disable(title)
+
+A_TrayMenu.ClickCount := 1
+A_TrayMenu.Default := title
+
 
 if !(A_Args.Has(1) && (A_Args[1] = "1"))
     drawUi() ; only draw ui if opened directly
@@ -96,50 +105,109 @@ destroyUi(){
     Ui := unset
 }
 
-WM_SYSCOMMAND(wParam, *) {
-    if (wParam = 0xF020)
-        destroyUi()
+redrawUi(){
+    global Ui
+    Ui["Autostart"].Text := validAutostart ? "Auto Start: Active" : "Auto Start: Inactive"
+    Ui["Autostart"].SetFont("c" (validAutostart ? "00ff00" : "ff0000"))
+
+    Ui["Add"].Enabled := !(validAutostart)
+    Ui["Remove"].Enabled := (validAutostart)
 }
 
-hiddenWindows := Map()
-loop {
-    RDP_windows := WinGetList("ahk_exe " mstscPath " ahk_class " className, , blacklist)
-    
+Array.Prototype.DefineProp("HasValue", {call: arrayHasValue})
+
+arrayHasValue(this, value){
+    for index, item in this {
+        if (item = value)
+            return index
+    }
+    return false
+}
+
+Map.Prototype.DefineProp("FindKeyByValue", {call: mapFindKeyByValue})
+
+mapFindKeyByValue(this, value){
+    for key, val in this {
+        if (val = value)
+            return key
+    }
+    return false
+}
+
+; representation of RDP windows listed in tray
+RDPs := Map()
+
+rdpClass := "ahk_class TscShellContainerClass"
+
+updateTray(){
+    RDP_windows := WinGetList(rdpClass, , blacklist)
+
     for hwnd in RDP_windows {
-        if !hiddenWindows.Has(hwnd) && (DllCall("IsWindowVisible", "Ptr", hwnd) = 0) {
-            addWindow(hwnd)
-        }
-        if hiddenWindows.Has(hwnd) && (DllCall("IsWindowVisible", "Ptr", hwnd) = 1) {
-            removeWindow(hwnd)
+        hidden := isWindowHidden(hwnd)
+
+        if WinExist(rdpClass " ahk_id " hwnd) = 0
+            continue
+        
+        title := SubStr(WinGetTitle(), 1, 260)
+
+        if !RDPs.Has(hwnd)
+            A_TrayMenu.Add(title, (title, *) => toggleWindowMode(title))
+        
+        if hidden
+            addHiddenWindow(hwnd)
+        else
+            addActiveWindow(hwnd)
+
+        RDPs.Set(hwnd, title)
+    }
+
+    for hwnd, title in RDPs {
+        if !RDP_windows.HasValue(hwnd) {
+            A_TrayMenu.Delete(title)
+            RDPs.Delete(hwnd)
         }
     }
-    sleep 100
 }
 
-removeWindow(hwnd){
-    global hiddenWindows
-    A_TrayMenu.Delete("Show " WinGetTitle("ahk_id " hwnd))
-    if hiddenWindows.Has(hwnd)
-        hiddenWindows.Delete(hwnd)
-}
-addWindow(hwnd){
-    global hiddenWindows
-    A_TrayMenu.Add("Show " WinGetTitle("ahk_id " hwnd), (name, *) => showWindow(name))
-    hiddenWindows.Set(hwnd, true)
-}
-showWindow(name){
-    title := SubStr(name, 6) ; remove "Show "
-    hwnd := WinGetID(title)
-    WinShow("ahk_id " hwnd)
-    removeWindow(hwnd)
+updateTray()
+
+SetTimer(updateTray, 100)
+
+F2::Reload
+
+isWindowHidden(hwnd) => (DllCall("IsWindowVisible", "Ptr", hwnd) = 0)
+
+addActiveWindow(input) => A_TrayMenu.Check(inputResolver(input))
+
+addHiddenWindow(input) => A_TrayMenu.Uncheck(inputResolver(input))
+
+inputResolver(input){
+    if IsNumber(input)
+        if WinExist(rdpClass " ahk_id " input)
+            return WinGetTitle()
+    else ; title
+        return SubStr(input, 1, 260)
 }
 
-Hideall()=>(Run('"' A_ScriptDir '\handler.ahk" "0" "0"'))
-Showall(){
-    hiddenWindows.Clear()
-    Run('"' A_ScriptDir '\handler.ahk" "1" "0"')
+toggleWindowMode(name){
+    hwnd := RDPs.FindKeyByValue(name)
+
+    switch isWindowHidden(hwnd){
+        case 1:
+            WinShow("ahk_id " hwnd)
+            addActiveWindow(hwnd)
+        case 0:
+            WinHide("ahk_id " hwnd)
+            addHiddenWindow(hwnd)
+    }
 }
-Help()=>(Run('"' A_ScriptDir '\README.md"'))
+
+Hideall() => Run('"' A_ScriptDir '\handler.ahk" "0"')
+
+Showall(*) => Run('"' A_ScriptDir '\handler.ahk" "1"')
+
+Help() => ( Run('https://github.com/Noobyguy775/RDPWindowManager/blob/main/README.md') )
+
 
 deregisterAutostart(*){
     global validAutostart := 0
@@ -149,6 +217,7 @@ deregisterAutostart(*){
     }
     redrawUi()
 }
+
 registerAutostart(*){
     global validAutostart := 1
     try RegWrite('"' A_ScriptDir '\lib\AutoHotkey64.exe" ' ; executable
@@ -161,13 +230,4 @@ registerAutostart(*){
         MsgBox("Failed to register autostart.")
     }
     redrawUi()
-}
-
-redrawUi(){
-    global Ui
-    Ui["Autostart"].Text := validAutostart ? "Auto Start: Active" : "Auto Start: Inactive"
-    Ui["Autostart"].SetFont("c" (validAutostart ? "00ff00" : "ff0000"))
-
-    Ui["Add"].Enabled := !(validAutostart)
-    Ui["Remove"].Enabled := (validAutostart)
 }

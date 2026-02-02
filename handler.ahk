@@ -30,7 +30,7 @@ minimizeWindowOffset := 115
 
 expected_count := IniRead(configPath, "Main", "ExpectedCount", 0)
 blacklist_titles := Trim(IniRead(configPath, "Main", "Blacklist", ""))
-timeout := IniRead(configPath, "Main", "Timeout", 30)
+timeout := IniRead(configPath, "Main", "Timeout", 30)//5
 
 managedWindows := []
 
@@ -47,11 +47,11 @@ while (!repeat && A_Index = 1 ;run once
         case 1:
             ShowWindows()
     }
-    sleep 1000
+    sleep 5000
     if repeat
         ToolTip "[RDP Window Manager] " A_Index " sec: Found " managedWindows.Length "/" expected_count " RDP windows...", 0, 0
     if A_Index = timeout 
-        MsgBox "Failed to find all windows after " timeout " attempts. Found " managedWindows.Length "/" expected_count ". Exiting in 10 seconds.", "RDP Window Manager", "T10"
+        MsgBox "Failed to find all windows after " timeout*5 " attempts. Found " managedWindows.Length "/" expected_count ". Exiting in 10 seconds.", "RDP Window Manager", "T10"
 }
 if repeat {
     Tooltip "", 0, 0
