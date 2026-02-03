@@ -1,3 +1,14 @@
+<p align="center">
+<a href="https://github.com/Noobyguy775/RDPWindowManager/releases">
+  <img src="https://img.shields.io/github/v/release/Noobyguy775/RDPWindowManager?color=orange"
+  alt="Release">
+</a>
+<a href="https://github.com/Noobyguy775/RDPWindowManager/releases">
+  <img src="https://img.shields.io/github/downloads/Noobyguy775/RDPWindowManager/total?color=blue"
+  alt="Downloads">
+</a>
+</p>
+
 ## RDP Window Hider
 A Ui that can manage RDP windows' hiding/showing with features like Autostart and a blacklist
 
