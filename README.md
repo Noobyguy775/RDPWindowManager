@@ -1,15 +1,11 @@
 <p align="center">
-<a href="https://github.com/Noobyguy775/RDPWindowManager/releases">
-  <img src="https://img.shields.io/github/v/release/Noobyguy775/RDPWindowManager?color=orange"
-  alt="Release">
-</a>
-<a href="https://github.com/Noobyguy775/RDPWindowManager/releases">
-  <img src="https://img.shields.io/github/downloads/Noobyguy775/RDPWindowManager/total?color=blue"
-  alt="Downloads">
-</a>
+  <img src="https://github.com/Noobyguy775/RDPWindowManager/blob/main/lib/icon.ico">
+  <h3 align="center">RDP Window Hider</h3>
 </p>
-
-## RDP Window Hider
+<p align="center">
+  <a href="https://github.com/Noobyguy775/RDPWindowManager/releases"><img src="https://img.shields.io/github/v/release/Noobyguy775/RDPWindowManager?color=orange" alt="Release"></a>
+  <a href="https://github.com/Noobyguy775/RDPWindowManager/releases"><img src="https://img.shields.io/github/downloads/Noobyguy775/RDPWindowManager/total?color=blue" alt="Downloads"></a>
+</p>
 A Ui that can manage RDP windows' hiding/showing with features like Autostart and a blacklist
 
 To get started, run `start.bat`
