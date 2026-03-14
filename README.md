@@ -6,9 +6,12 @@
   <a href="https://github.com/Noobyguy775/RDPWindowManager/releases"><img src="https://img.shields.io/github/v/release/Noobyguy775/RDPWindowManager?color=orange" alt="Release"></a>
   <a href="https://github.com/Noobyguy775/RDPWindowManager/releases"><img src="https://img.shields.io/github/downloads/Noobyguy775/RDPWindowManager/total?color=blue" alt="Downloads"></a>
 </p>
+<p>
 A Ui that can manage RDP windows' hiding/showing with features like Autostart and a blacklist
+  
+To get started, click <a href="https://github.com/Noobyguy775/RDPWindowManager/releases/latest" target="_blank" >here</a>, download the .zip, and then run `start.bat`.
+</p>
 
-To get started, run `start.bat`
 
 ### Ui
 The Ui is launched by running `start.bat` (which runs `gui.ahk`). Here you can manage Auto start and also access a few useful settings, such as the blacklist and autostart settings.
